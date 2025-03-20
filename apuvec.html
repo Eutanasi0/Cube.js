@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+        rel="stylesheet">
+    <title>Cubo Rotando</title>
+    <style>
+        body {
+            background-color: black;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family:'Courier New', Courier, monospace;
+            
+            overflow: hidden;
+        }
+        canvas {
+            display: flex;
+            border: 1px solid white;
+            max-width: 100%;
+            max-height: 100%;
+
+        }
+
+        .rangein {
+            -webkit-appearance: none;
+            appearance: none;
+            top: 10px;
+            left: 10px;
+            width: 100px;
+
+            height: 5px;
+            background: #d3d3d381;
+            border-radius: 0px;
+            outline: none;
+        }
+        .rangein::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 10px;
+            height: 10px;
+            background: transparent;
+            border: 1.5px solid white;
+            border-color: white ;
+            cursor: pointer;
+            color: transparent;
+        }
+        .controls {
+            left: 0;
+            padding: 1% 1%; 
+            display: flex;
+            align-items: center;
+            color: white;
+            font-size: 14px;
+            border: 1px solid white;
+            flex-direction: column  ;
+            margin: 0 2% 0 0;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            color: white;
+            font-size: 14px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        .all {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+        }
+
+        
+        @media (max-width: 750px) {
+            .all {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="all">
+        <div class="controls">
+            <label for="distance">distance</label>
+            <input type="range" class="rangein" id="distance" min="50" max="400" value="400">
+            <label for="velo"> speed </label>
+            <input type="range" class="rangein" id="velo" min="0.001" max="0.1" step="0.001" value="0.005">
+            <label for="size"> size</label>
+            <input type="range" class="rangein" id="size"  max="170" min="10" value="50" step="10">
+        </div>
+        <canvas id="mozambike"></canvas>
+    </div>
+    
+</body>
+<script>
+    const canvas = document.getElementById('mozambike');
+    const ctx = canvas.getContext('2d');
+    const canvasSize = Math.min(window.innerWidth, window.innerHeight) * 0.8; 
+    canvas.width = canvasSize;
+    canvas.height = canvasSize;
+    const distanceInput = document.getElementById('distance');
+    const veloInput = document.getElementById('velo');
+    const sizeInput = document.getElementById('size');
+
+    let cubeSize = parseInt(sizeInput.value);
+        sizeInput.addEventListener('input', () => {
+            cubeSize = parseInt(sizeInput.value);
+            updateCubeSize();
+        });
+    //xyz 
+        function updateCubeSize() {
+            front[0] = { x: -cubeSize, y: -cubeSize, z: cubeSize };
+            front[1] = { x: cubeSize, y: -cubeSize, z: cubeSize };
+            front[2] = { x: cubeSize, y: cubeSize, z: cubeSize };
+            front[3] = { x: -cubeSize, y: cubeSize, z: cubeSize };
+
+            back[0] = { x: -cubeSize, y: -cubeSize, z: -cubeSize };
+            back[1] = { x: cubeSize, y: -cubeSize, z: -cubeSize };
+            back[2] = { x: cubeSize, y: cubeSize, z: -cubeSize };
+            back[3] = { x: -cubeSize, y: cubeSize, z: -cubeSize };
+        }
+        const front = [
+            { x: -cubeSize, y: -cubeSize, z: cubeSize },
+            { x: cubeSize, y: -cubeSize, z: cubeSize },
+            { x: cubeSize, y: cubeSize, z: cubeSize },
+            { x: -cubeSize, y: cubeSize, z: cubeSize }
+        ];
+
+        const back = [
+            { x: -cubeSize, y: -cubeSize, z: -cubeSize },
+            { x: cubeSize, y: -cubeSize, z: -cubeSize },
+            { x: cubeSize, y: cubeSize, z: -cubeSize },
+            { x: -cubeSize, y: cubeSize, z: -cubeSize }
+        ];
+
+    let angleX = 0;
+    let angleY = 0;
+
+    
+    let angxy = parseFloat(veloInput.value);
+        veloInput.addEventListener('input', () => {
+            angxy = parseFloat(veloInput.value);
+    });
+    
+    //
+    let distance = parseInt(distanceInput.value);
+        distanceInput.addEventListener('input', () => {
+            distance = parseInt(distanceInput.value);
+        });
+
+    function project(point) {
+        const scale = distance / (distance - point.z);
+        return {
+            x: canvas.width / 2 + point.x * scale,
+            y: canvas.height / 2 + point.y * scale
+        };
+    }
+
+    function rot(point, angleX, angleY) {
+        const cosX = Math.cos(angleX);
+        const sinX = Math.sin(angleX);
+        const cosY = Math.cos(angleY);
+        const sinY = Math.sin(angleY);
+
+        let y = point.y * cosX - point.z * sinX;
+        let z = point.y * sinX + point.z * cosX;
+
+        let x = point.x * cosY - z * sinY;
+        z = point.x * sinY + z * cosY;
+
+        return { x, y, z };
+    }
+
+    function drawPolygon(points, color, colorbck) {
+        ctx.beginPath();
+        const projected = project(points[0]);
+        ctx.moveTo(projected.x, projected.y);
+        points.slice(1).forEach(point => {
+            const p = project(point);
+            ctx.lineTo(p.x, p.y);
+        });
+        ctx.closePath();
+        ctx.strokeStyle = color;
+        ctx.stroke();
+
+        ctx.fillStyle = colorbck;
+        ctx.fill();
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const rotatedFront = front.map(point => rot(point, angleX, angleY));
+        const rotatedBack = back.map(point => rot(point, angleX, angleY));
+
+
+        drawPolygon(rotatedFront, 'white', 'transparent');
+        drawPolygon(rotatedBack, 'white', 'transparent');
+
+        
+
+
+        for (let i = 0; i < 4; i++) {
+            ctx.beginPath();
+            const p1 = project(rotatedFront[i]);
+            const p2 = project(rotatedBack[i]);
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+
+        // angxy del input de la barrita
+        angleX += angxy;
+        angleY += angxy;
+
+        requestAnimationFrame(animate);
+    }
+
+    animate();
+</script>
+</html>
